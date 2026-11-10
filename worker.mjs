@@ -78,10 +78,13 @@ function view(state, role) {
       alive: state.stage === 'lobby' || state.alive.includes(id),
       voted: state.stage === 'vote' && !!state.votes[id]
     })),
-    eligible: state.eligible, history: state.history, winner: state.winner,
+    eligible: state.eligible,
+    history: host ? state.history : state.history.map(({ turn, counts, tied, out }) => ({ turn, counts, tied, out })),
+    winner: state.winner,
     myVote: state.votes[role] ?? null,
     word: host ? null : (role === state.undercover ? odd : common)
   };
+  if (host && state.stage === 'vote') summary.votes = state.votes;
   if (host || state.stage === 'ended') {
     summary.undercover = state.undercover;
     summary.common = common;
@@ -110,7 +113,7 @@ function act(state, role, body) {
       const highest = Math.max(...Object.values(counts));
       const tied = state.eligible.filter(name => counts[name] === highest);
       const out = tied.length === 1 ? tied[0] : null;
-      state.history.unshift({ turn: state.turn, counts, tied, out });
+      state.history.unshift({ turn: state.turn, counts, tied, out, votes: { ...state.votes } });
       if (out) {
         state.alive = state.alive.filter(name => name !== out);
         if (out === state.undercover) state.winner = '平民';

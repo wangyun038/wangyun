@@ -100,6 +100,16 @@ function renderWords(host) {
   </section>`;
 }
 
+function renderVoteDetails(votes) {
+  if (!votes) return '';
+  const voters = state.players.filter(player => Object.hasOwn(votes, player.id));
+  if (!voters.length) return '';
+  return '<h3>投票明细（仅裁判可见）</h3>' + voters.map(player =>
+    '<div class="line"><strong>' + escape(playerLabel(player.id)) + '</strong>投给 ' +
+    escape(playerLabel(votes[player.id])) + '</div>'
+  ).join('');
+}
+
 function renderTurn(host) {
   const alive = state.players.filter(player => player.alive);
   const active = alive.some(player => player.id === state.role);
@@ -121,7 +131,7 @@ function renderTurn(host) {
     body = '<p>现在轮到 <strong>' + escape(playerLabel(state.speaker)) + '</strong> 发言。</p>';
     if (!host && !active) body += '<p class="muted">你已出局，可以继续观战。</p>';
   }
-  return `<section class="card"><h2>第 ${state.turn} 轮 · ${voting ? '投票' : '发言'}</h2>${body}</section>`;
+  return `<section class="card"><h2>第 ${state.turn} 轮 · ${voting ? '投票' : '发言'}</h2>${body}${voting && host ? renderVoteDetails(state.votes) : ''}</section>`;
 }
 
 function renderTranscript() {
@@ -133,7 +143,7 @@ function renderTranscript() {
     const lines = speeches.map(entry => '<div class="line"><strong>' + escape(playerLabel(entry.player)) + '</strong>' + escape(entry.text) + '</div>').join('');
     const tally = result ? '<p><strong>' + (result.out ? escape(playerLabel(result.out)) + ' 出局' : '平票，下一轮重投') + '</strong></p><p class="muted">' +
       Object.entries(result.counts).map(([id, count]) => escape(playerLabel(id)) + ' ' + count + '票').join(' · ') + '</p>' : '';
-    return '<div class="history"><strong>第 ' + turn + ' 轮</strong>' + (lines || '<p class="muted">暂无文字发言。</p>') + tally + '</div>';
+    return '<div class="history"><strong>第 ' + turn + ' 轮</strong>' + (lines || '<p class="muted">暂无文字发言。</p>') + tally + renderVoteDetails(result?.votes) + '</div>';
   }).join('')}</section>`;
 }
 
