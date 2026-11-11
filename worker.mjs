@@ -120,7 +120,7 @@ function act(state, role, body) {
         else if (state.alive.length <= 2) state.winner = '卧底';
       }
       state.stage = state.winner ? 'ended' : 'describe';
-      state.eligible = out ? state.alive : tied;
+      state.eligible = [...state.alive];
       if (!state.winner) {
         state.turn++;
         state.votes = {};
@@ -196,6 +196,8 @@ async function api(request, env, path) {
     const row = await env.DB.prepare('SELECT version, state FROM rooms WHERE code = ? AND touched >= ?').bind(code, now - ttl).first();
     if (!row) fail('房间不存在或已过期。', 404);
     const state = readState(row.state);
+    // Restore the full candidate list for rounds already running under the old tie rule.
+    if (state.stage === 'describe' || state.stage === 'vote') state.eligible = [...state.alive];
     let key = typeof body.key === 'string' && body.key ? body.key : null;
     let role = key ? seat(state, key) : null;
     if (path === '/api/join') {
